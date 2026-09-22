@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Client-side registration form validation demo">
+  <title>Form Validation & Testing Demo</title>
+  <style>
+    :root { --primary: #4a90e2; --success: #2ecc71; --error: #e74c3c; --border: #edf2f7; --ink: #2c3e50; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 20px 0; background: #f0f4f8; color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; }
+    .card { width: min(100%, 480px); padding: 30px; border-radius: 15px; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .1); }
+    h1 { margin: 0 0 25px; padding-bottom: 10px; border-bottom: 2px solid var(--border); font-size: 1.5rem; text-align: center; }
+    .row { display: grid; gap: 15px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .field { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; color: #546e7a; font-size: 13px; font-weight: 600; }
+    input, select { width: 100%; min-height: 0; padding: 12px; border: 2px solid var(--border); border-radius: 8px; color: var(--ink); font: inherit; font-size: 14px; transition: .3s; }
+    input:focus, select:focus { outline: 0; border-color: var(--primary); }
+    .error { display: none; margin: 4px 0 0; color: var(--error); font-size: 11px; font-weight: 500; line-height: 1.4; }
+    .invalid input, .invalid select { border-color: var(--error); background: #fff8f8; }
+    .invalid .error { display: block; }
+    button { width: 100%; min-height: 0; margin-top: 20px; padding: 15px; border: 0; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; }
+    button:hover { background: #357abd; }
+    button:focus-visible { outline: 3px solid rgba(74, 144, 226, .35); outline-offset: 3px; }
+    dialog { width: min(90vw, 390px); border: 0; border-radius: 14px; box-shadow: 0 20px 60px rgba(15, 23, 42, .28); padding: 30px; text-align: center; }
+    dialog::backdrop { background: rgba(15, 23, 42, .5); }
+    dialog h2 { margin: 0 0 10px; color: var(--success); }
+    dialog p { color: #475569; }
+    @media (max-width: 480px) { .card { padding: 24px 18px; } .row { grid-template-columns: 1fr; gap: 0; } }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>YDG Dersi Kayıt Formu</h1>
+    <form id="registration-form" novalidate>
+      <div class="row">
+        <div class="field" data-field="firstName"><label for="firstName">Ad</label><input id="firstName" name="firstName" autocomplete="given-name" required><p class="error" aria-live="polite"></p></div>
+        <div class="field" data-field="lastName"><label for="lastName">Soyad</label><input id="lastName" name="lastName" autocomplete="family-name" required><p class="error" aria-live="polite"></p></div>
+      </div>
+      <div class="field" data-field="email"><label for="email">E-posta</label><input id="email" name="email" type="email" autocomplete="email" placeholder="ornek@alan.com" required><p class="error" aria-live="polite"></p></div>
+      <div class="field" data-field="phone"><label for="phone">Telefon</label><input id="phone" name="phone" inputmode="numeric" autocomplete="tel-national" placeholder="5551234567" maxlength="10" required><p class="error" aria-live="polite"></p></div>
+      <div class="field" data-field="password"><label for="password">Şifre</label><input id="password" name="password" type="password" autocomplete="new-password" required><p class="error" aria-live="polite"></p></div>
+      <div class="field" data-field="birthDate"><label for="birthDate">Doğum Tarihi</label><input id="birthDate" name="birthDate" inputmode="numeric" placeholder="GG/AA/YYYY" maxlength="10" required><p class="error" aria-live="polite"></p></div>
+      <div class="field" data-field="country"><label for="country">Ülke</label><select id="country" name="country" autocomplete="country-name" required><option value="">Seçiniz...</option><option value="TR">Türkiye</option><option value="DE">Almanya</option></select><p class="error" aria-live="polite"></p></div>
+      <button type="submit">KAYDET</button>
+    </form>
+  </main>
+  <dialog id="success-dialog" aria-labelledby="success-title"><h2 id="success-title">Kayıt doğrulandı</h2><p>Formdaki tüm alanlar doğrulama kurallarını karşıladı.</p><form method="dialog"><button type="submit">YENİ KAYIT</button></form></dialog>
+  <script>
+    const form = document.querySelector('#registration-form');
+    const successDialog = document.querySelector('#success-dialog');
+    const maxYear = new Date().getFullYear();
+    const rules = {
+      firstName: value => value.trim() ? '' : 'Bu alan boş bırakılamaz.',
+      lastName: value => value.trim() ? '' : 'Bu alan boş bırakılamaz.',
+      email: value => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) ? '' : 'Geçerli bir e-posta adresi girin.',
+      phone: value => /^\d{10}$/.test(value.replace(/\D/g, '')) ? '' : 'Telefon numarası tam 10 haneli olmalıdır (5xx...).',
+      password: value => {
+        if (value.length < 8 || value.length > 20) return 'Şifre uzunluğu 8-20 karakter olmalı.';
+        if (!/[A-Z]/.test(value)) return 'Şifre en az bir büyük harf içermelidir.';
+        if (!/[a-z]/.test(value)) return 'Şifre en az bir küçük harf içermelidir.';
+        if (!/\d/.test(value)) return 'Şifre en az bir rakam içermelidir.';
+        if (!/[!@#$%^&*()_+\[\]{}|;:',.<>?]/.test(value)) return 'Şifre en az bir özel karakter içermelidir.';
+        return '';
+      },
+      birthDate: value => {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+        if (!match) return 'Tarih GG/AA/YYYY biçiminde olmalıdır.';
+        const [, day, month, year] = match.map(Number);
+        const parsed = new Date(year, month - 1, day);
+        return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day && year >= 1900 && year <= maxYear ? '' : 'Geçerli bir doğum tarihi girin.';
+      },
+      country: value => value ? '' : 'Lütfen bir ülke seçin.'
+    };
+    function showResult(field, message) {
+      const group = form.querySelector(`[data-field="${field}"]`);
+      const input = group.querySelector('input, select');
+      group.classList.toggle('invalid', Boolean(message));
+      input.setAttribute('aria-invalid', String(Boolean(message)));
+      group.querySelector('.error').textContent = message;
+      return !message;
+    }
+    function validateField(field) { return showResult(field, rules[field](form.elements[field].value)); }
+    Object.keys(rules).forEach(field => form.elements[field].addEventListener('blur', () => validateField(field)));
+    form.elements.phone.addEventListener('input', event => { event.target.value = event.target.value.replace(/\D/g, ''); });
+    form.elements.birthDate.addEventListener('input', event => { const digits = event.target.value.replace(/\D/g, '').slice(0, 8); event.target.value = digits.replace(/^(\d{2})(\d)/, '$1/$2').replace(/^(\d{2}\/\d{2})(\d)/, '$1/$2'); });
+    form.addEventListener('submit', event => { event.preventDefault(); if (Object.keys(rules).map(validateField).every(Boolean)) successDialog.showModal(); });
+    successDialog.addEventListener('close', () => { form.reset(); form.querySelectorAll('.invalid').forEach(group => group.classList.remove('invalid')); });
+  </script>
+</body>
+</html>
